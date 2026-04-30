@@ -5,3 +5,8 @@
 6
 composer.lock
 src/config/Database.php
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+.DS_Store

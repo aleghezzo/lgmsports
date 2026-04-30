@@ -30,11 +30,15 @@ class GameType extends PersistentEntity implements Seriarizable {
     }
 
     public function jsonSerialize() {
+        $amountByGender = [];
+        foreach ($this->amountByGender as $genderId => $amount) {
+            $amountByGender[(string) $genderId] = (int) $amount;
+        }
         return [
-            "id" => $this->id,
+            "id" => (int) $this->id,
             "name" => $this->name,
-            "teamsAmount" => $this->teamsAmount,
-            "amountByGender" => $this->amountByGender
+            "teamsAmount" => (int) $this->teamsAmount,
+            "amountByGender" => $amountByGender
         ];
     }
 

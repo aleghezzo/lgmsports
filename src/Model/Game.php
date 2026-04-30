@@ -24,10 +24,10 @@ class Game extends PersistentEntity implements Seriarizable {
 
     public function jsonSerialize() {
         return [
-            "id" => $this->id,
+            "id" => (int) $this->id,
             "date" => $this->date,
             "type" => $this->type->jsonSerialize(),
-            "status" => $this->status,
+            "status" => (int) $this->status,
             "teams" => $this->teams->jsonSerialize(),
             "teamless" => $this->teamless->jsonSerialize()
         ];
@@ -46,13 +46,55 @@ class Game extends PersistentEntity implements Seriarizable {
         return null;
     }
 
-    public static function getAllByStatus($status, $limit) {
-        $rows = self::queryWithParameters("SELECT * FROM game WHERE status=? LIMIT 10" , array(intval($status)));
+    /**
+     * List games filtered by status, with optional date range, pagination
+     * and sort direction. Past games (status=1) default to newest-first;
+     * any other status defaults to oldest-first.
+     *
+     * @param int|string $status
+     * @param int|null   $limit  page size (default 10, capped at 100)
+     * @param int        $offset rows to skip
+     * @param string|null $from  inclusive lower bound, YYYY-MM-DD
+     * @param string|null $to    inclusive upper bound, YYYY-MM-DD
+     */
+    public static function getAllByStatus($status, $limit = 10, $offset = 0, $from = null, $to = null) {
+        $limit = max(1, min(100, intval($limit ?: 10)));
+        $offset = max(0, intval($offset));
+        $sortDir = (intval($status) === 1) ? 'DESC' : 'ASC';
+
+        list($where, $params) = self::buildStatusFilter($status, $from, $to);
+        $sql = "SELECT id FROM game WHERE $where ORDER BY date $sortDir LIMIT $limit OFFSET $offset";
+
+        $rows = self::queryWithParameters($sql, $params);
         $events = array();
         for($i = 0; $i < $rows->rowCount(); $i++) {
             $events[] = Game::getById($rows->fetch()['id']);
         }
         return $events;
+    }
+
+    /**
+     * Number of games matching the same filters used by getAllByStatus,
+     * ignoring pagination. Useful for X-Total-Count style responses.
+     */
+    public static function countByStatus($status, $from = null, $to = null) {
+        list($where, $params) = self::buildStatusFilter($status, $from, $to);
+        $row = self::queryWithParameters("SELECT COUNT(*) AS n FROM game WHERE $where", $params)->fetch();
+        return intval($row['n']);
+    }
+
+    private static function buildStatusFilter($status, $from, $to) {
+        $clauses = ['status = ?'];
+        $params = [intval($status)];
+        if ($from !== null && $from !== '') {
+            $clauses[] = 'date >= ?';
+            $params[] = $from . ' 00:00:00';
+        }
+        if ($to !== null && $to !== '') {
+            $clauses[] = 'date <= ?';
+            $params[] = $to . ' 23:59:59';
+        }
+        return [implode(' AND ', $clauses), $params];
     }
 
     public static function getById($id) {
@@ -83,8 +125,7 @@ class Game extends PersistentEntity implements Seriarizable {
             if($losersTeam != null) {
                 $players = $losersTeam->getPlayers();
                 for ($i = 0; $i < $players->size(); $i++) {
-                    $player = $players->get($i);
-                    $game->teamless->add(new Player($player->getId(), $player->getNickName()));
+                    $game->teamless->add($players->get($i));
                 }
             }
             return $game;

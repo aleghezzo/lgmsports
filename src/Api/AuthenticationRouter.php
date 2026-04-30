@@ -34,9 +34,10 @@ class AuthenticationRouter implements Router {
       if ($user && $user->getId()) {
         Session::getInstance()->logIn($user->getId(), false);
         return $response->withJson([
+          "id" => (int) $user->getId(),
           "username" => $user->getUserName(),
-          "roleId" => $user->getRoleId(),
-          "playerId" => $user->getPlayerId()
+          "roleId" => (int) $user->getRoleId(),
+          "playerId" => (int) $user->getPlayerId()
         ]);
       }
       throw new \Exception('Oops there was an error! Please retry.');

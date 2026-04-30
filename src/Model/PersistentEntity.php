@@ -28,4 +28,16 @@ class PersistentEntity {
     protected static function queryErrorInfo() {
         return \App\Database::getInstance()->getConn()->errorInfo();
     }
+
+    /**
+     * PDO returns every column as a string. The SPA's TypeScript types
+     * declare numeric ids/flags as `number`, and uses strict-equality (===)
+     * comparisons all over the place. Coerce here, preserving NULL.
+     */
+    protected static function intOrNull($value) {
+        if ($value === null || $value === '') {
+            return null;
+        }
+        return (int) $value;
+    }
 }

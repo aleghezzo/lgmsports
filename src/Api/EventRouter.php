@@ -15,8 +15,27 @@ class EventRouter implements Router {
       if (!Session::getInstance()->hasLoggedInUser()) {
         return $response->withStatus(401);
       }
-      $events = \App\Model\Game::getAllByStatus($request->getParam('status'), $request->getParam('amount'));
-      return $response->withJson($events);
+      $status = $request->getParam('status');
+      // pageSize is the canonical name; `amount` kept as a backward-compat alias.
+      $pageSize = $request->getParam('pageSize');
+      if ($pageSize === null || $pageSize === '') {
+        $pageSize = $request->getParam('amount');
+      }
+      $pageSize = (int) ($pageSize ?: 10);
+
+      $page = max(1, (int) ($request->getParam('page') ?: 1));
+      $offset = ($page - 1) * $pageSize;
+
+      $from = $request->getParam('from');
+      $to = $request->getParam('to');
+
+      $events = \App\Model\Game::getAllByStatus($status, $pageSize, $offset, $from, $to);
+      $total = \App\Model\Game::countByStatus($status, $from, $to);
+
+      return $response
+        ->withHeader('X-Total-Count', (string) $total)
+        ->withHeader('Access-Control-Expose-Headers', 'X-Total-Count')
+        ->withJson($events);
     });
 
     $app->get('/api/events/{id}', function (Request $request, Response $response, $args) {
@@ -67,11 +86,16 @@ class EventRouter implements Router {
       $event = \App\Model\Game::getById($args['eventId']);
       $playerId = $request->getParam('id');
       if (!$playerId && $request->getParam('nickName') && $request->getParam('genderId')) {
-        $player = \App\Model\Player::getByNickNameAndGenderId($request->getParam('nickName'), $request->getParam('genderId'), 3);
+        $nickName = $request->getParam('nickName');
+        $genderId = $request->getParam('genderId');
+        // Default skill for ad-hoc "external" players: id 3 ("I know what a
+        // ball is") — admins later set the real skill from the admin page.
+        $defaultSkillId = 3;
+        $player = \App\Model\Player::getByNickNameAndGenderId($nickName, $genderId);
         if (!$player) {
-          $player = \App\Model\Player::create($request->getParam('nickName'), $request->getParam('genderId'));
+          $player = \App\Model\Player::create($nickName, $genderId, $defaultSkillId);
         }
-        $playerId = $player->getId();
+        $playerId = $player ? $player->getId() : null;
       }
       if ($playerId) {
         $event->addPlayer($playerId);

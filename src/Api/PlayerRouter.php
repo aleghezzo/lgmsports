@@ -11,6 +11,15 @@ use \Psr\Http\Message\ResponseInterface as Response;
 class PlayerRouter implements Router {
 	function loadRoutes(\Slim\App $app) {
 
+		$app->get('/api/players', function (Request $request, Response $response) {
+			if (!Session::getInstance()->hasLoggedInUser()) {
+				return $response->withStatus(401);
+			}
+			$search = (string) ($request->getParam('search') ?? '');
+			$limit = (int) ($request->getParam('limit') ?? 10);
+			return $response->withJson(\App\Model\Player::search($search, $limit));
+		});
+
 		$app->post('/api/players/{id}/inmunity', function (Request $request, Response $response, $args) {
 			if (!Session::getInstance()->hasLoggedInUser()) {
 				return $response->withStatus(401);

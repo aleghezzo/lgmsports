@@ -17,9 +17,10 @@ class UserRouter implements Router {
       }
       if($user = \App\Model\User::getById(Session::getInstance()->userId)) {
         return $response->withJson([
+          "id" => (int) $user->getId(),
           "username" => $user->getUserName(),
-          "roleId" => $user->getRoleId(),
-          "playerId" => $user->getPlayerId()
+          "roleId" => (int) $user->getRoleId(),
+          "playerId" => (int) $user->getPlayerId()
         ]);
       }
       throw new \Exception("Missing user, please sign in again", 1);

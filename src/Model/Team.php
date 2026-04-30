@@ -17,7 +17,7 @@ class Team extends PersistentEntity implements Seriarizable {
 
     public function jsonSerialize() {
         return [
-            "id" => $this->id,
+            "id" => (int) $this->id,
             "name" => $this->name,
             "players" => $this->players->jsonSerialize(),
         ];

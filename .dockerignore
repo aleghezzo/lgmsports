@@ -1,0 +1,18 @@
+.git
+.gitignore
+.idea
+.vscode
+.DS_Store
+
+# Dev-only host files
+docker-compose.yml
+Dockerfile
+README.md
+
+# Frontend (not needed by the PHP image; we serve web/dist/ which lives
+# alongside the PHP source and gets bind-mounted in dev).
+frontend/node_modules
+frontend/dist
+
+# Tests / scratch
+test

@@ -86,17 +86,54 @@ class Player extends PersistentEntity implements Seriarizable {
         return null;
     }
 
+    /**
+     * Substring search by nickName, ordered with prefix matches first
+     * (so typing "Pa" surfaces "Pablo" before "Espa-pa"). Capped at $limit
+     * for typeahead responsiveness.
+     */
+    public static function search($search, $limit = 10) {
+        $search = is_string($search) ? trim($search) : '';
+        if ($search === '') {
+            return [];
+        }
+        $limit = max(1, min(50, (int) $limit));
+
+        // LIKE escapes for the user-supplied portion so % and _ behave literally.
+        $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search);
+        $prefix = $escaped . '%';
+        $contains = '%' . $escaped . '%';
+
+        $sql = "SELECT id, nickName, genderId, hasInmunity, levelId
+                FROM player
+                WHERE nickName LIKE ? ESCAPE '\\\\'
+                ORDER BY (nickName LIKE ? ESCAPE '\\\\') DESC, nickName ASC
+                LIMIT $limit";
+        $stmt = self::queryWithParameters($sql, [$contains, $prefix]);
+
+        $rows = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $rows[] = new Player(
+                $row['id'],
+                $row['nickName'],
+                $row['genderId'],
+                $row['levelId'],
+                $row['hasInmunity']
+            );
+        }
+        return $rows;
+    }
+
     public static function delete($nickName) {
         self::queryWithParameters("DELETE FROM player WHERE nickName = ?", array($nickName));
     }
 
     public function jsonSerialize() {
         return [
-            "id" => $this->id,
+            "id" => self::intOrNull($this->id),
             "nickName" => $this->nickName,
-            "genderId" => $this->genderId,
-            "hasInmunity" => $this->hasInmunity,
-            "levelId" => $this->levelId
+            "genderId" => self::intOrNull($this->genderId),
+            "hasInmunity" => (int) $this->hasInmunity,
+            "levelId" => self::intOrNull($this->levelId),
         ];
     }
 
