@@ -83,11 +83,11 @@ $app->get('/', function (Request $request, Response $response) {
 // web server / built-in server didn't already resolve to a static file.
 // MUST be registered last so it doesn't shadow the API routes above.
 $serveSpa = function (Request $request, Response $response) {
-  $path = __DIR__ . '/web/dist/index.html';
+  $path = __DIR__ . '/web/index.html';
   if (!is_file($path)) {
     return $response->withStatus(503)
       ->withHeader('Content-Type', 'text/plain; charset=utf-8')
-      ->write("LGM Sports SPA bundle not found.\n\nRun `cd frontend && npm run build` to generate web/dist/.\n");
+      ->write("LGM Sports SPA bundle not found.\n\nRun `cd frontend && npm run build` to generate web/.\n");
   }
   $body = file_get_contents($path);
   $response->getBody()->write($body);

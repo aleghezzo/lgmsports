@@ -15,8 +15,7 @@ The site is split in two:
 .
 ├── index.php              # Slim app entry: API routes + SPA fallback
 ├── src/                   # PHP models, API routers, session, db
-├── web/
-│   ├── dist/              # Built SPA bundle (generated, gitignored)
+├── web/                   # Built SPA bundle (generated, gitignored)
 ├── frontend/              # React SPA source (Vite + Tailwind + shadcn/ui)
 └── cli/                   # SQL dumps and seeds
 ```

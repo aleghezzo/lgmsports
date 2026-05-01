@@ -6,13 +6,13 @@ import tailwindcss from "@tailwindcss/vite";
 // https://vite.dev/config/
 export default defineConfig(({ command }) => ({
   plugins: [react(), tailwindcss()],
-  // In `vite build` the bundle is emitted to ../web/dist/ and served by
-  // PHP's built-in server at /web/dist/*, so asset URLs in index.html must
+  // In `vite build` the bundle is emitted to ../web/ and served by
+  // PHP's built-in server at /web/*, so asset URLs in index.html must
   // be prefixed accordingly. The dev server keeps base "/" so /web/ still
   // works at http://localhost:5173/web/.
-  base: command === "build" ? "/web/dist/" : "/",
+  base: command === "build" ? "/web/" : "/",
   build: {
-    outDir: "../web/dist",
+    outDir: "../web",
     emptyOutDir: true,
   },
   resolve: {
